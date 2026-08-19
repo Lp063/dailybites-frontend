@@ -1,19 +1,22 @@
+import Chip from '@mui/material/Chip';
+import type { ChipProps } from '@mui/material/Chip';
+
 type StatusBadgeProps = {
   status: string;
 };
 
-const tone: Record<string, string> = {
-  PENDING: 'badge-pending',
-  APPROVED: 'badge-approved',
-  SUSPENDED: 'badge-suspended',
-  TRIAL: 'badge-trial',
-  PAID: 'badge-approved',
-  COLLECTED: 'badge-approved',
-  CANCELLED: 'badge-suspended',
-  MISSED: 'badge-pending',
+const tone: Record<string, ChipProps['color']> = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  SUSPENDED: 'error',
+  TRIAL: 'info',
+  PAID: 'success',
+  COLLECTED: 'success',
+  CANCELLED: 'error',
+  MISSED: 'warning',
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const className = tone[status] ?? 'badge-default';
-  return <span className={`status-badge ${className}`}>{status.replace(/_/g, ' ')}</span>;
+  const color = tone[status] ?? 'default';
+  return <Chip label={status.replace(/_/g, ' ')} color={color} size="small" />;
 }

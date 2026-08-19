@@ -1,3 +1,7 @@
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+
 type StatCardProps = {
   label: string;
   value: string | number;
@@ -6,10 +10,18 @@ type StatCardProps = {
 
 export function StatCard({ label, value, hint }: StatCardProps) {
   return (
-    <article className="stat-card">
-      <p>{label}</p>
-      <strong>{value}</strong>
-      <span>{hint}</span>
-    </article>
+    <Card variant="outlined">
+      <CardContent>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="h5" component="strong" sx={{ display: 'block', fontWeight: 700, my: 0.5 }}>
+          {value}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {hint}
+        </Typography>
+      </CardContent>
+    </Card>
   );
 }
