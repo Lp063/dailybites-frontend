@@ -3,6 +3,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Restaurants } from './pages/Restaurants';
 import { RestaurantDetail } from './pages/RestaurantDetail';
+import UsersPage from './pages/admin/Users';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import AppLayout from './layout/AppLayout';
 
@@ -15,6 +16,7 @@ export function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+          <Route path="/users" element={<UsersPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
