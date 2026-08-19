@@ -1,9 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import { adminApi, formatCurrency } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
 
-type RestaurantDetail = {
+type RestaurantDetailData = {
   id: string;
   name: string;
   description: string | null;
@@ -28,14 +50,14 @@ type RestaurantDetail = {
     quantityRemaining: number;
     isActive: boolean;
   }[];
-  _count: { orders: number };
+  count: { orders: number };
 };
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export function RestaurantDetail() {
   const { id } = useParams<{ id: string }>();
-  const [restaurant, setRestaurant] = useState<RestaurantDetail | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -77,177 +99,196 @@ export function RestaurantDetail() {
     }
   }
 
-  if (loading) return <p className="muted-copy">Loading restaurant…</p>;
-  if (error || !restaurant) return <p className="error">{error || 'Restaurant not found'}</p>;
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !restaurant) {
+    return <Alert severity="error">{error || 'Restaurant not found'}</Alert>;
+  }
+
+  const detailRows: [string, ReactNode][] = [
+    ['Owner email', restaurant.users.email],
+    ['Category', restaurant.category.replace(/_/g, ' ')],
+    ['Description', restaurant.description],
+    [
+      'Address',
+      [restaurant.addressStreet, restaurant.addressCity, restaurant.addressPostcode]
+        .filter(Boolean)
+        .join(', ') || '—',
+    ],
+    ['Contact', restaurant.contactNumber],
+    ['Business', restaurant.businessLegalName],
+    ['NZBN', restaurant.nzbn],
+    ['GST', restaurant.gstNumber],
+    ['Total orders', restaurant.count.orders],
+  ];
 
   return (
-    <section className="dashboard-stack">
-      <header className="dashboard-toolbar">
-        <div>
-          <p className="eyebrow">
-            <Link className="text-link" to="/restaurants">
+    <Stack spacing={3}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
+        <Box>
+          <Breadcrumbs sx={{ mb: 0.5 }}>
+            <Link to="/restaurants" style={{ color: 'inherit', textDecoration: 'none' }}>
               Restaurants
-            </Link>{' '}
-            / Detail
-          </p>
-          <h2>{restaurant.name}</h2>
-        </div>
-        <div className="action-row">
+            </Link>
+            <Typography color="text.secondary">Detail</Typography>
+          </Breadcrumbs>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 700 }}>
+            {restaurant.name}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
           {restaurant.status !== 'APPROVED' ? (
-            <button
-              type="button"
+            <Button
+              variant="contained"
               onClick={() => {
                 setNextStatus('APPROVED');
                 setShowModal(true);
               }}
             >
               Approve
-            </button>
+            </Button>
           ) : null}
           {restaurant.status !== 'SUSPENDED' ? (
-            <button
-              type="button"
-              className="secondary-button"
+            <Button
+              variant="outlined"
+              color="error"
               onClick={() => {
                 setNextStatus('SUSPENDED');
                 setShowModal(true);
               }}
             >
               Suspend
-            </button>
+            </Button>
           ) : null}
-        </div>
-      </header>
+        </Stack>
+      </Stack>
 
-      {actionError ? <p className="error">{actionError}</p> : null}
+      {actionError ? <Alert severity="error">{actionError}</Alert> : null}
 
-      <div className="detail-grid">
-        <article className="panel">
-          <div className="panel-head">
-            <h3>Profile</h3>
-            <StatusBadge status={restaurant.status} />
-          </div>
-          <dl className="detail-list">
-            <div>
-              <dt>Owner email</dt>
-              <dd>{restaurant.users.email}</dd>
-            </div>
-            <div>
-              <dt>Category</dt>
-              <dd>{restaurant.category.replace(/_/g, ' ')}</dd>
-            </div>
-            <div>
-              <dt>Description</dt>
-              <dd>{restaurant.description || '—'}</dd>
-            </div>
-            <div>
-              <dt>Address</dt>
-              <dd>
-                {[restaurant.addressStreet, restaurant.addressCity, restaurant.addressPostcode]
-                  .filter(Boolean)
-                  .join(', ') || '—'}
-              </dd>
-            </div>
-            <div>
-              <dt>Contact</dt>
-              <dd>{restaurant.contactNumber || '—'}</dd>
-            </div>
-            <div>
-              <dt>Business</dt>
-              <dd>{restaurant.businessLegalName || '—'}</dd>
-            </div>
-            <div>
-              <dt>NZBN</dt>
-              <dd>{restaurant.nzbn || '—'}</dd>
-            </div>
-            <div>
-              <dt>GST</dt>
-              <dd>{restaurant.gstNumber || '—'}</dd>
-            </div>
-            <div>
-              <dt>Total orders</dt>
-              <dd>{restaurant._count.orders}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="panel">
-          <div className="panel-head">
-            <h3>Weekly schedule</h3>
-          </div>
-          <ul className="schedule-list">
-            {restaurant.schedules.length === 0 ? (
-              <li className="muted-copy">No schedule configured</li>
-            ) : (
-              restaurant.schedules.map((slot) => (
-                <li key={slot.dayOfWeek}>
-                  <span>{DAYS[slot.dayOfWeek] ?? slot.dayOfWeek}</span>
-                  <span>
-                    {slot.enabled ? `${slot.startTime} – ${slot.endTime}` : 'Closed'}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
-        </article>
-
-        <article className="panel wide-panel">
-          <div className="panel-head">
-            <h3>Bags</h3>
-            <span>{restaurant.bags.length} configured</span>
-          </div>
-          {restaurant.bags.length === 0 ? (
-            <p className="muted-copy">No bags yet</p>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Size</th>
-                  <th>Category</th>
-                  <th>Value</th>
-                  <th>Price</th>
-                  <th>Qty left</th>
-                  <th>Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {restaurant.bags.map((bag) => (
-                  <tr key={bag.id}>
-                    <td>{bag.size}</td>
-                    <td>{bag.category.replace(/_/g, ' ')}</td>
-                    <td>{bag.displayValue}</td>
-                    <td>{formatCurrency(Number(bag.sellingPrice))}</td>
-                    <td>
-                      {bag.quantityRemaining}/{bag.quantity}
-                    </td>
-                    <td>{bag.isActive ? 'Yes' : 'No'}</td>
-                  </tr>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Typography variant="h6">Profile</Typography>
+                <StatusBadge status={restaurant.status} />
+              </Stack>
+              <List dense disablePadding>
+                {detailRows.map(([label, value]) => (
+                  <ListItem key={label} disableGutters sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <ListItemText primary={label} sx={{ flex: '0 0 40%' }} />
+                    <Typography variant="body2" sx={{ textAlign: 'right', flex: 1 }}>
+                      {value ?? '—'}
+                    </Typography>
+                  </ListItem>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </article>
-      </div>
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      {showModal ? (
-        <div className="modal-backdrop" role="presentation" onClick={() => setShowModal(false)}>
-          <div className="modal-card" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <h3>{nextStatus === 'APPROVED' ? 'Approve restaurant' : 'Suspend restaurant'}</h3>
-            <p>
-              Set <strong>{restaurant.name}</strong> to{' '}
-              <StatusBadge status={nextStatus} />?
-            </p>
-            <div className="modal-actions">
-              <button type="button" className="secondary-button" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button type="button" disabled={busy} onClick={confirmStatusChange}>
-                {busy ? 'Saving…' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </section>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                Weekly schedule
+              </Typography>
+              {restaurant.schedules.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No schedule configured
+                </Typography>
+              ) : (
+                <List dense disablePadding>
+                  {restaurant.schedules.map((slot) => (
+                    <ListItem
+                      key={slot.dayOfWeek}
+                      disableGutters
+                      sx={{ display: 'flex', justifyContent: 'space-between' }}
+                    >
+                      <ListItemText primary={DAYS[slot.dayOfWeek] ?? slot.dayOfWeek} />
+                      <Typography variant="body2" color={slot.enabled ? 'text.primary' : 'text.secondary'}>
+                        {slot.enabled ? `${slot.startTime} - ${slot.endTime}` : 'Closed'}
+                      </Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1 }}>
+                <Typography variant="h6">Bags</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {restaurant.bags.length} configured
+                </Typography>
+              </Stack>
+              {restaurant.bags.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No bags yet
+                </Typography>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Size</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Value</TableCell>
+                      <TableCell>Price</TableCell>
+                      <TableCell>Qty left</TableCell>
+                      <TableCell>Active</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {restaurant.bags.map((bag) => (
+                      <TableRow key={bag.id}>
+                        <TableCell>{bag.size}</TableCell>
+                        <TableCell>{bag.category.replace(/_/g, ' ')}</TableCell>
+                        <TableCell>{bag.displayValue}</TableCell>
+                        <TableCell>{formatCurrency(Number(bag.sellingPrice))}</TableCell>
+                        <TableCell>
+                          {bag.quantityRemaining}/{bag.quantity}
+                        </TableCell>
+                        <TableCell>{bag.isActive ? 'Yes' : 'No'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Dialog open={showModal} onClose={() => setShowModal(false)}>
+        <DialogTitle>{nextStatus === 'APPROVED' ? 'Approve restaurant' : 'Suspend restaurant'}</DialogTitle>
+        <DialogContent>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography>
+              Set <strong>{restaurant.name}</strong> to
+            </Typography>
+            <StatusBadge status={nextStatus} />
+            <Typography>?</Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowModal(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={confirmStatusChange} disabled={busy}>
+            {busy ? 'Saving...' : 'Confirm'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
   );
 }
