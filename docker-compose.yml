@@ -1,0 +1,11 @@
+services:
+  frontend:
+    container_name: dailybites-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "4173:80"
+    restart: unless-stopped
