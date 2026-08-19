@@ -89,9 +89,9 @@ export default function UsersPage() {
       if (query.search.trim()) params.set('search', query.search.trim());
       if (query.role) params.set('role', query.role);
 
-      const { data } = await api.get<UsersResponse>(`/users?${params.toString()}`);
-      setItems(data.items);
-      setTotalPages(data.pagination.totalPages || 1);
+      const res = await api.get<{ success: boolean; data: UsersResponse }>(`users?${params.toString()}`);
+      setItems(res.data.data.items);
+      setTotalPages(res.data.data.pagination.totalPages || 1);
     } catch (e) {
       setError('Failed to load users');
     } finally {
