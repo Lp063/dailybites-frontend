@@ -1,13 +1,28 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { adminApi, RestaurantListItem } from '../lib/api';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import Pagination from '@mui/material/Pagination';
+import Card from '@mui/material/Card';
+import { adminApi, type RestaurantListItem } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
 
 const STATUS_FILTERS = ['ALL', 'PENDING', 'APPROVED', 'SUSPENDED', 'TRIAL'] as const;
 
 export function Restaurants() {
   const [items, setItems] = useState<RestaurantListItem[]>([]);
-  const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>('ALL');
+  const [status, setStatus] = useState<typeof STATUS_FILTERS[number]>('ALL');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -44,99 +59,106 @@ export function Restaurants() {
     setQuery(search.trim());
   }
 
-  return (
-    <section className="dashboard-stack">
-      <header className="dashboard-toolbar">
-        <div>
-          <p className="eyebrow">Operations</p>
-          <h2>Restaurants</h2>
-        </div>
-      </header>
+  function onFilterClick(value: typeof STATUS_FILTERS[number]) {
+    setStatus(value);
+    setPage(1);
+  }
 
-      <div className="toolbar-row">
-        <form className="search-form" onSubmit={onSearch}>
-          <input
+  return (
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          Operations
+        </Typography>
+        <Typography variant="h5" component="h2" sx={{ fontWeight: 700 }}>
+          Restaurants
+        </Typography>
+      </Box>
+
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
+        <Box component="form" onSubmit={onSearch} sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            size="small"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, city, or email"
+            sx={{ minWidth: 280 }}
           />
-          <button type="submit">Search</button>
-        </form>
+          <Button type="submit" variant="contained">
+            Search
+          </Button>
+        </Box>
 
-        <div className="filter-row">
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
           {STATUS_FILTERS.map((value) => (
-            <button
+            <Chip
               key={value}
-              type="button"
-              className={`filter-chip ${status === value ? 'active' : ''}`}
-              onClick={() => {
-                setStatus(value);
-                setPage(1);
-              }}
-            >
-              {value.replace(/_/g, ' ')}
-            </button>
+              label={value.replace(/_/g, ' ')}
+              onClick={() => onFilterClick(value)}
+              color={status === value ? 'primary' : 'default'}
+              variant={status === value ? 'filled' : 'outlined'}
+            />
           ))}
-        </div>
-      </div>
+        </Stack>
+      </Stack>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <div className="panel wide-panel table-panel">
+      <Card variant="outlined">
         {loading ? (
-          <p className="muted-copy">Loading restaurants…</p>
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
         ) : items.length === 0 ? (
-          <p className="muted-copy">No restaurants found</p>
+          <Box sx={{ p: 4 }}>
+            <Typography color="text.secondary">No restaurants found</Typography>
+          </Box>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>City</th>
-                <th>Owner</th>
-                <th>Bags</th>
-                <th>Orders</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>City</TableCell>
+                <TableCell>Owner</TableCell>
+                <TableCell>Bags</TableCell>
+                <TableCell>Orders</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {items.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <strong>{row.name}</strong>
-                    <span className="table-sub">{row.category.replace(/_/g, ' ')}</span>
-                  </td>
-                  <td>
+                <TableRow key={row.id} hover>
+                  <TableCell>
+                    <Typography sx={{ fontWeight: 700 }}>{row.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {row.category.replace(/_/g, ' ')}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     <StatusBadge status={row.status} />
-                  </td>
-                  <td>{row.addressCity ?? '—'}</td>
-                  <td>{row.ownerEmail}</td>
-                  <td>{row.bagCount}</td>
-                  <td>{row.orderCount}</td>
-                  <td>
-                    <Link className="text-link" to={`/restaurants/${row.id}`}>
+                  </TableCell>
+                  <TableCell>{row.addressCity ?? '—'}</TableCell>
+                  <TableCell>{row.ownerEmail}</TableCell>
+                  <TableCell>{row.bagCount}</TableCell>
+                  <TableCell>{row.orderCount}</TableCell>
+                  <TableCell align="right">
+                    <Button component={Link} to={`/restaurants/${row.id}`} size="small">
                       View
-                    </Link>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
 
-      <div className="pager">
-        <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-          Previous
-        </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-          Next
-        </button>
-      </div>
-    </section>
+      {!loading && items.length > 0 && totalPages > 1 ? (
+        <Stack direction="row" justifyContent="center">
+          <Pagination count={totalPages} page={page} onChange={(_, value) => setPage(value)} />
+        </Stack>
+      ) : null}
+    </Stack>
   );
 }

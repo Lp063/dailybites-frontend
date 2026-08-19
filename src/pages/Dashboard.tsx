@@ -89,14 +89,14 @@ export function Dashboard() {
 
       <Grid container spacing={2}>
         {cards.map((card) => (
-          <Grid key={card.label} item xs={12} sm={6} md={4}>
+          <Grid key={card.label} size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard {...card} />
           </Grid>
         ))}
       </Grid>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card variant="outlined">
             <CardContent>
               <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1 }}>
@@ -127,7 +127,7 @@ export function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card variant="outlined">
             <CardContent>
               <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1 }}>
