@@ -11,7 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import { authApi } from '../lib/api';
+import { authApi, setTokens } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -32,10 +32,11 @@ export function Login() {
       const res = await authApi.login({ email, password });
       const data = res.data ?? res;
       const token = data?.accessToken || data?.token;
+      const refreshToken = data?.refreshToken;
       const role = data?.user?.role || data?.role;
       if (!token) throw new Error('Missing access token');
       if (role !== 'ADMIN') throw new Error('Admin access required');
-      sessionStorage.setItem('admin_token', token);
+      setTokens(token, refreshToken);
       setToken(token);
       nav('/', { replace: true });
     } catch (err) {
@@ -58,7 +59,7 @@ export function Login() {
       }}
     >
       <IconButton onClick={toggle} aria-label="Toggle theme" sx={{ position: 'absolute', top: 16, right: 16 }}>
-        {theme === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+        {theme === 'light' ? <LightModeIcon /> : <DarkModeIcon />}
       </IconButton>
 
       <Card sx={{ maxWidth: 400, width: '100%' }} variant="outlined">

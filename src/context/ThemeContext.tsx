@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(
-    (document.documentElement.dataset.theme as Theme) || 'dark'
+    (document.documentElement.dataset.theme as Theme) || 'light'
   );
 
   // Kept temporarily so pages not yet migrated off custom CSS still theme correctly.

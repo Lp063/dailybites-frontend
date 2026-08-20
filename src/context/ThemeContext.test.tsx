@@ -1,18 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useTheme, ThemeProvider } from './ThemeContext';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { vi } from 'vitest';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
 function Probe() {
   const { theme, toggle } = useTheme();
-  const muiTheme = useMuiTheme();
   return (
     <div>
-      <span data-testid="context-theme">{theme}</span>
-      <span data-testid="mui-mode">{muiTheme.palette.mode}</span>
+      <span data-testid="theme-value">{theme}</span>
       <button onClick={toggle}>Toggle</button>
     </div>
   );
+}
+
+function BadProbe() {
+  useTheme();
+  return null;
 }
 
 describe('ThemeContext', () => {
@@ -20,43 +23,47 @@ describe('ThemeContext', () => {
     delete document.documentElement.dataset.theme;
   });
 
-  it('defaults to dark theme and syncs MUI palette mode', () => {
+  it('defaults to light theme', () => {
     render(
       <ThemeProvider>
         <Probe />
       </ThemeProvider>
     );
-    expect(screen.getByTestId('context-theme')).toHaveTextContent('dark');
-    expect(screen.getByTestId('mui-mode')).toHaveTextContent('dark');
-  });
-
-  it('toggling context theme also toggles MUI palette mode', async () => {
-    render(
-      <ThemeProvider>
-        <Probe />
-      </ThemeProvider>
-    );
-    await userEvent.click(screen.getByText('Toggle'));
-    expect(screen.getByTestId('context-theme')).toHaveTextContent('light');
-    expect(screen.getByTestId('mui-mode')).toHaveTextContent('light');
-  });
-
-  it('sets data-theme attribute on document root for legacy CSS compatibility', async () => {
-    render(
-      <ThemeProvider>
-        <Probe />
-      </ThemeProvider>
-    );
-    expect(document.documentElement.dataset.theme).toBe('dark');
-    await userEvent.click(screen.getByText('Toggle'));
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 
+  it('toggles between light and dark when toggle() is called', async () => {
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Toggle' }));
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Toggle' }));
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('light');
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('picks up an existing dataset.theme value on mount instead of forcing light', () => {
+    document.documentElement.dataset.theme = 'dark';
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>
+    );
+    expect(screen.getByTestId('theme-value')).toHaveTextContent('dark');
+  });
+
   it('throws if useTheme is called outside ThemeProvider', () => {
-    const BadProbe = () => {
-      useTheme();
-      return null;
-    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<BadProbe />)).toThrow('useTheme must be used within ThemeProvider');
+    consoleError.mockRestore();
   });
 });

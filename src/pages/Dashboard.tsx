@@ -75,14 +75,6 @@ export function Dashboard() {
             Admin overview
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={toggle}
-          startIcon={theme === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
-        >
-          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        </Button>
       </Stack>
 
       {error ? <Alert severity="error">{error}</Alert> : null}

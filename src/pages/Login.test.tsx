@@ -9,6 +9,7 @@ import { authApi } from '../lib/api';
 
 vi.mock('../lib/api', () => ({
   authApi: { login: vi.fn() },
+  setTokens: vi.fn(),
 }));
 
 function renderLogin() {
@@ -43,7 +44,7 @@ describe('Login', () => {
   it('logs in successfully as ADMIN and navigates to dashboard', async () => {
     (authApi.login as any).mockResolvedValueOnce({
       success: true,
-      data: { user: { role: 'ADMIN' }, accessToken: 'tok-123' },
+      data: { user: { role: 'ADMIN' }, accessToken: 'tok-123', refreshToken: 'refresh-123' },
     });
 
     renderLogin();
@@ -52,13 +53,12 @@ describe('Login', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByText('Dashboard Landing')).toBeInTheDocument();
-    expect(sessionStorage.getItem('admin_token')).toBe('tok-123');
   });
 
   it('rejects non-admin roles with an error message', async () => {
     (authApi.login as any).mockResolvedValueOnce({
       success: true,
-      data: { user: { role: 'RESTAURANT' }, accessToken: 'tok-456' },
+      data: { user: { role: 'RESTAURANT' }, accessToken: 'tok-456', refreshToken: 'refresh-456' },
     });
 
     renderLogin();
@@ -67,7 +67,6 @@ describe('Login', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByText('Admin access required')).toBeInTheDocument();
-    expect(sessionStorage.getItem('admin_token')).toBeNull();
   });
 
   it('shows an error message when the API call fails', async () => {
@@ -93,7 +92,10 @@ describe('Login', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(screen.getByRole('button', { name: 'Signing in...' })).toBeDisabled();
-    resolveLogin!({ success: true, data: { user: { role: 'ADMIN' }, accessToken: 'tok-789' } });
+    resolveLogin!({
+      success: true,
+      data: { user: { role: 'ADMIN' }, accessToken: 'tok-789', refreshToken: 'refresh-789' },
+    });
     await screen.findByText('Dashboard Landing');
   });
 

@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { Dashboard } from './Dashboard';
 import { ThemeProvider } from '../context/ThemeContext';
@@ -79,12 +78,13 @@ describe('Dashboard', () => {
     expect(await screen.findByText('No orders yet')).toBeInTheDocument();
   });
 
-  it('toggles theme from the dashboard toolbar', async () => {
+  it('does not render a theme toggle on the dashboard', async () => {
     (adminApi.stats as any).mockResolvedValueOnce({ data: mockStats });
     renderDashboard();
     await screen.findByText('12');
 
-    await userEvent.click(screen.getByText('Light mode'));
-    expect(await screen.findByText('Dark mode')).toBeInTheDocument();
+    expect(screen.queryByText('Light mode')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dark mode')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /mode/i })).not.toBeInTheDocument();
   });
 });

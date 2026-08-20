@@ -23,12 +23,35 @@ function renderLayout(initialPath = '/') {
 }
 
 describe('AppLayout', () => {
-  it('renders brand, nav, and the routed page content', () => {
+  beforeEach(() => {
+    delete document.documentElement.dataset.theme;
+    sessionStorage.clear();
+  });
+
+  it('renders collapsed by default: nav and content visible, labels hidden', () => {
     renderLayout('/');
-    expect(screen.getByText('DailyBites')).toBeInTheDocument();
-    expect(screen.getByText('Admin console')).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Admin navigation' })).toBeInTheDocument();
     expect(screen.getByText('Dashboard Content')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Admin navigation' })).toBeInTheDocument();
+
+    // Labels are not rendered while collapsed — only icons (with tooltips) show
+    expect(screen.queryByText('DailyBites')).not.toBeInTheDocument();
+    expect(screen.queryByText('Restaurants')).not.toBeInTheDocument();
+    expect(screen.queryByText('Logout')).not.toBeInTheDocument();
+  });
+
+  it('expands and reveals labels on hover, then collapses again on mouse leave', async () => {
+    renderLayout('/');
+    const nav = screen.getByRole('navigation', { name: 'Admin navigation' });
+
+    await userEvent.hover(nav);
+    expect(await screen.findByText('DailyBites')).toBeInTheDocument();
+    expect(screen.getByText('Restaurants')).toBeInTheDocument();
+    expect(screen.getByText('Logout')).toBeInTheDocument();
+
+    await userEvent.unhover(nav);
+    expect(screen.queryByText('DailyBites')).not.toBeInTheDocument();
+    expect(screen.queryByText('Restaurants')).not.toBeInTheDocument();
+    expect(screen.queryByText('Logout')).not.toBeInTheDocument();
   });
 
   it('shows the correct page title in the topbar based on current route', () => {
@@ -37,15 +60,28 @@ describe('AppLayout', () => {
     expect(screen.getByText('Restaurants Content')).toBeInTheDocument();
   });
 
-  it('toggles theme label when the theme button is clicked', async () => {
+  it('toggles theme via the sidebar control (the only theme toggle)', async () => {
     renderLayout('/');
-    const toggleButton = screen.getByText('Light mode');
+    const nav = screen.getByRole('navigation', { name: 'Admin navigation' });
+    await userEvent.hover(nav);
+
+    // Default theme is light, so the sidebar offers to switch to dark
+    const toggleButton = await screen.findByText('Dark mode');
     await userEvent.click(toggleButton);
-    expect(screen.getByText('Dark mode')).toBeInTheDocument();
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(await screen.findByText('Light mode')).toBeInTheDocument();
   });
 
-  it('renders a logout control', () => {
+  it('calls logout and clears the stored token when Logout is clicked', async () => {
+    sessionStorage.setItem('admin_token', 'fake-token');
     renderLayout('/');
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Admin navigation' });
+    await userEvent.hover(nav);
+
+    const logoutButton = await screen.findByText('Logout');
+    await userEvent.click(logoutButton);
+
+    expect(sessionStorage.getItem('admin_token')).toBeNull();
   });
 });
